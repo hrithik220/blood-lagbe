@@ -10,12 +10,14 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $defaultPassword = Hash::make('password');
+
         // Admin
         User::firstOrCreate(
             ['email' => 'admin@bloodlagbe.com'],
             [
                 'name'              => 'Admin User',
-                'password'          => Hash::make('password'),
+                'password'          => $defaultPassword,
                 'role'              => 'admin',
                 'is_active'         => true,
                 'email_verified_at' => now(),
@@ -41,7 +43,7 @@ class UserSeeder extends Seeder
                 ['email' => $donor['email']],
                 [
                     'name'              => $donor['name'],
-                    'password'          => Hash::make('password'),
+                    'password'          => $defaultPassword,
                     'role'              => 'donor',
                     'is_active'         => true,
                     'email_verified_at' => now(),
@@ -56,7 +58,7 @@ class UserSeeder extends Seeder
             ['email' => 'user@bloodlagbe.com'],
             [
                 'name'              => 'Demo User',
-                'password'          => Hash::make('password'),
+                'password'          => $defaultPassword,
                 'role'              => 'user',
                 'is_active'         => true,
                 'email_verified_at' => now(),

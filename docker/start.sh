@@ -3,7 +3,7 @@ set -e
 
 echo "==> Blood Lagbe Startup Script"
 
-# Ensure storage directories exist
+# Ensure storage directories exist with proper permissions
 mkdir -p storage/logs \
          storage/framework/sessions \
          storage/framework/views \
@@ -13,25 +13,32 @@ mkdir -p storage/logs \
 chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
 
+# Dynamic port binding for Render
+PORT="${PORT:-10000}"
+echo "==> Configuring Nginx port: ${PORT}..."
+sed -i "s/listen 80;/listen ${PORT};/g" /etc/nginx/nginx.conf
+sed -i "s/listen 10000;/listen ${PORT};/g" /etc/nginx/nginx.conf
+
 # Generate APP_KEY if not set
 if [ -z "$APP_KEY" ]; then
     echo "==> Generating application key..."
     php artisan key:generate --force
 fi
 
-# Run database migrations
-echo "==> Running database migrations..."
-php artisan migrate --force --no-interaction
-
-# Seed database (only if DB is empty)
-echo "==> Checking if seeding is needed..."
-php artisan db:seed --force --no-interaction 2>/dev/null || true
-
 # Optimize for production
-echo "==> Optimizing application..."
+echo "==> Optimizing caches..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-echo "==> Starting services..."
+# Run database migrations
+echo "==> Running database migrations..."
+php artisan migrate --force --no-interaction
+
+# Seed database asynchronously so web server starts immediately without timeout
+echo "==> Scheduling initial seed..."
+(sleep 2 && php artisan db:seed --force --no-interaction 2>/dev/null || true) &
+
+# Start Nginx & PHP-FPM immediately via Supervisor
+echo "==> Starting web server on port ${PORT}..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
