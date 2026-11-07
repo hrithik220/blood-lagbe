@@ -26,6 +26,10 @@ services:
         fromDatabase:
           name: blood-lagbe-db
           property: connectionString
+      - key: DB_URL
+        fromDatabase:
+          name: blood-lagbe-db
+          property: connectionString
       - key: CACHE_DRIVER
         value: file
       - key: SESSION_DRIVER

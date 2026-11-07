@@ -1,5 +1,8 @@
 FROM php:8.2-fpm-alpine
 
+# Set environment variables
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 # Install system dependencies
 RUN apk add --no-cache \
     nginx \
@@ -12,7 +15,8 @@ RUN apk add --no-cache \
     unzip \
     git \
     curl \
-    supervisor
+    supervisor \
+    dos2unix
 
 # Install PHP extensions
 RUN docker-php-ext-install \
@@ -21,7 +25,8 @@ RUN docker-php-ext-install \
     pgsql \
     gd \
     zip \
-    opcache
+    opcache \
+    bcmath
 
 # Install Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
@@ -29,22 +34,16 @@ COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for layer caching
-COPY composer.json composer.lock ./
-
-# Install PHP dependencies (no dev, no scripts yet)
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-
 # Copy application files
 COPY . .
 
-# Install Node dependencies and build assets
-RUN npm ci && npm run build && rm -rf node_modules
+# Install PHP dependencies with resilient flags
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs --no-scripts
 
-# Run composer scripts with full files
-RUN composer dump-autoload --optimize
+# Install Node dependencies and compile production assets
+RUN npm install && npm run build && rm -rf node_modules
 
-# Create required directories and set permissions
+# Ensure required directories exist and set correct permissions
 RUN mkdir -p storage/logs \
              storage/framework/sessions \
              storage/framework/views \
@@ -63,9 +62,9 @@ COPY docker/nginx.conf /etc/nginx/nginx.conf
 # Configure Supervisor to manage Nginx + PHP-FPM
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Startup script
+# Startup script (convert Windows CRLF to Linux LF)
 COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN dos2unix /start.sh && chmod +x /start.sh
 
 EXPOSE 80
 
