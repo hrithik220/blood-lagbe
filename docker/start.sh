@@ -16,8 +16,7 @@ chown -R www-data:www-data storage bootstrap/cache
 # Dynamic port binding for Render
 PORT="${PORT:-10000}"
 echo "==> Configuring Nginx port: ${PORT}..."
-sed -i "s/listen 80;/listen ${PORT};/g" /etc/nginx/nginx.conf
-sed -i "s/listen 10000;/listen ${PORT};/g" /etc/nginx/nginx.conf
+sed -i "s/__PORT__/${PORT}/g" /etc/nginx/nginx.conf
 
 # Generate APP_KEY if not set
 if [ -z "$APP_KEY" ]; then
