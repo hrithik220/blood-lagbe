@@ -16,6 +16,8 @@ chown -R www-data:www-data storage bootstrap/cache
 # Dynamic port binding for Render
 PORT="${PORT:-10000}"
 echo "==> Configuring Nginx port: ${PORT}..."
+# Remove any Alpine default nginx configs that may conflict
+rm -f /etc/nginx/conf.d/default.conf /etc/nginx/http.d/default.conf 2>/dev/null || true
 sed -i "s/__PORT__/${PORT}/g" /etc/nginx/nginx.conf
 
 # Generate APP_KEY if not set

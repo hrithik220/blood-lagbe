@@ -56,7 +56,8 @@ RUN mkdir -p storage/logs \
 COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/opcache.ini  /usr/local/etc/php/conf.d/opcache.ini
 
-# Configure Nginx
+# Configure Nginx - remove Alpine's default configs to prevent duplicate listen
+RUN rm -f /etc/nginx/conf.d/default.conf /etc/nginx/http.d/default.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 
 # Configure Supervisor to manage Nginx + PHP-FPM
